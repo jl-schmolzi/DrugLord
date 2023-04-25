@@ -1,0 +1,90 @@
+@startuml
+class App{
+    +{static}main()
+}
+class DrugLord {
+    GameState : gameState
+    Scanner : scanner
+    void start()
+    void printActions()
+    void startBuyDrugs()
+    void startSellDrugs()
+    void startJetToCity()
+    void startVisitBank()
+    void startGoToHospital()
+    void startSeeLoanShark()
+    void startUnknownAction()
+    }
+'class DrugLordUI {
+'}
+class GameState {
+    -{static} final int : START_HEALTH
+    -{static} final int : START_CASH
+    -{static} final int : START_STATUS
+    -{static} final int : START_HOLD
+    -{static} final int : START_BANK
+    -{static} final int : START_LOAN_DEPT
+    -DateTime time
+    -CityName : currentCity
+    -List<City> cities
+    -Player player
+    -initPlayer()
+    -initCities()
+    -initStartingCity()
+    +void advance(int days)
+}
+class Player {
+    -int cash
+    -int bank
+    -int debt
+    -int status
+    -int health
+    -int hold
+    -int currentHold = 0
+    -Map<Drug, Integer> drugs
+    +int getDrugCount(Drug drug)
+    +String playerInformation()
+    +void pay(int price)
+    +boolean checkPay(int price)
+}
+class City {
+    -final Map<Drug, Integer> drugPrices
+    -final Map<CityName, Integer> flightPrices
+    -final CityName name
+    +int getDrugPrice(Drug drug)
+    +Map<CityName, Integer> getFlightPrices()
+    +public String getFlightPricesString()
+}
+enum CityName {
+    CHICAGO("Chicago"),
+    DETROIT("Deroit"),
+    LAS_VEGAS("Las Vegas"),
+    LOS_ANGELES("Los Angeles"),
+    MIAMI("Miami"),
+    NEW_YORK("New York"),
+    SAN_DIEGO("San Diego"),
+    WASHINGTON_D_C("Washington D.C.")
+    -final String name;
+
+    }
+enum Drug {
+    COCAINE,
+    CRACK,
+    HEROIN,
+    ACID,
+    CRYSTAL,
+    GRASS,
+    SPEED,
+    LUDES
+    +{static}Drug drugFromId(int id)
+    +int getDrugId()
+}
+App .. DrugLord
+DrugLord .. GameState
+GameState ..CityName
+GameState .. City
+GameState ..Player
+Player .. Drug
+City .. Drug
+City .. CityName
+@enduml
