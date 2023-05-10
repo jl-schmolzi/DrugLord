@@ -134,4 +134,22 @@ public class Player {
     public int checkHospital() {
         return health;
     }
+
+    public void loan(int money) {
+        cash += money;
+        debt += money;
+    }
+
+    public void payLoanBack(int money) {
+        pay(money);
+        debt = (money > debt) ? 0 : debt - money;
+    }
+
+    public void increaseLoan(double loanSharkInterest) {
+        debt = debt + (int) Math.floor(debt * loanSharkInterest);
+    }
+
+    public void damage(int i) {
+        health -= i;
+    }
 }

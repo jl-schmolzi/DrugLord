@@ -1,5 +1,6 @@
 package org.example.druglord;
 
+import java.time.LocalDate;
 import java.util.*;
 
 import static org.example.druglord.CityName.*;
@@ -13,16 +14,25 @@ public class GameState {
     private static final int START_LOAN_DEPT = 0;
     private static final double LOAN_SHARK_INTEREST = 0.05;
     private static final int LOAN_SHARK_DMG = 25;
-    private static final int LOAN_SHARK_DMG_MODIFIER = 1;
+    private static final int LOAN_SHARK_DMG_BASE_MODIFIER = 1;
+    public static final int WINNING_VALUE = 5_000_000;
+    public static final int HOSPITAL_DURATION = 14;
+    public static final int BASE_ACTION_DURATION = 1;
+    public static final int LOAN_DAYS = 14;
     private CityName currentCity;
+    private LocalDate loanDate;
+    private int loanSharkModifier;
     private final List<City> cities;
     private Player player;
+    private LocalDate date;
 
     public GameState() {
         this.cities = new ArrayList<>();
         initCities();
         initStartingCity();
         initPlayerInformation();
+        date = LocalDate.now();
+        loanSharkModifier = LOAN_SHARK_DMG_BASE_MODIFIER;
     }
 
     private void initPlayerInformation() {
@@ -42,7 +52,7 @@ public class GameState {
     private void initStartingCity() {
         Random random = new Random();
         int index = random.nextInt(cities.size());
-        currentCity = cities.get(index).getName();
+        currentCity = cities.get(index).name();
 
     }
 
@@ -212,8 +222,11 @@ public class GameState {
 
     public String getStringOfState() {
         //        System.out.printf("|%s|%n", new String(new char[WINDOW_SIZE - 2]).replace('\u0000', '='));
-        System.out.println("        Drugs on hand        Street prices ");
+
+
         StringBuilder ret = new StringBuilder();
+        ret.append(String.format("Date %s%n", date));
+        ret.append("        Drugs on hand        Street prices \n");
         for (Drug value : Drug.values()) {
             ret.append(String.format("     %1$-10s %2$8d | %1$-10s %3$8d$ %n",
                     value, getPlayerDrugs(value), getDrugPrice(value)));
@@ -224,7 +237,7 @@ public class GameState {
     }
 
     private City getCurrentCityFromList() {
-        return cities.stream().filter(city -> city.getName() == currentCity).findAny().orElse(null);
+        return cities.stream().filter(city -> city.name() == currentCity).findAny().orElse(null);
     }
 
     private int getDrugPrice(Drug value) {
@@ -241,22 +254,23 @@ public class GameState {
 
     public boolean CheckTravelTo(int index) {
         CityName cityName = CityName.cityNameFromId(index);
-        int price = getCurrentCityFromList().getFlightPrices().get(cityName);
+        int price = getCurrentCityFromList().flightPrices().get(cityName);
         return player.checkPay(price);
     }
 
     public void travelTo(int cityId) {
         CityName cityName = CityName.cityNameFromId(cityId);
-        int price = getCurrentCityFromList().getFlightPrices().get(cityName);
+        int price = getCurrentCityFromList().flightPrices().get(cityName);
         player.pay(price);
         currentCity = cityName;
+        advance();
     }
 
     public String getCurrentDrugPricesString() {
         return getCurrentCityFromList().getDrugPricesString();
     }
 
-    public boolean CheckBuyDrug(int index, int amount) {
+    public boolean checkBuyDrug(int index, int amount) {
         int price = getCurrentCityFromList().getDrugPrice(Drug.drugFromId(index)) * amount;
         return player.checkHold(amount) && player.checkPay(price);
     }
@@ -266,6 +280,7 @@ public class GameState {
         player.pay(price);
         player.addDrug(Drug.drugFromId(index), amount);
         player.addHold(amount);
+        advance();
     }
 
     public boolean checkSellDrug(int index, int amount) {
@@ -278,8 +293,21 @@ public class GameState {
         player.sellDrug(drug, price, amount);
     }
 
-    public void advance(int days) {
+    public void advance() {
+        date = date.plusDays(BASE_ACTION_DURATION);
+        player.increaseLoan(LOAN_SHARK_INTEREST);
+        if(loanDate != null && loanDate.equals(date)){
+            player.damage(LOAN_SHARK_DMG * loanSharkModifier);
+            loanSharkModifier++;
+            System.out.printf("You got beaten for %d damage%n", LOAN_SHARK_DMG * loanSharkModifier);
+            loanDate = loanDate.plusDays(LOAN_DAYS);
+        }
+    }
 
+    public void advance(int days) {
+        for(int i = 0; i < days; i++){
+            advance();
+        }
     }
 
     public boolean checkWithdraw(int amount) {
@@ -288,6 +316,7 @@ public class GameState {
 
     public void withdraw(int amount) {
         player.withdraw(amount);
+        advance();
     }
 
     public boolean checkDeposit(int amount) {
@@ -296,10 +325,7 @@ public class GameState {
 
     public void deposit(int amount) {
         player.deposit(amount);
-    }
-
-    public void goToHospital() {
-
+        advance();
     }
 
     public int checkHospitalPrice() {
@@ -323,5 +349,33 @@ public class GameState {
 
     public void payHospital(int hostpitalPay) {
         player.pay(hostpitalPay);
+        advance(HOSPITAL_DURATION);
+    }
+
+    public void loan(int money) {
+        player.loan(money);
+        loanDate = date.plusDays(LOAN_DAYS);
+        advance();
+    }
+
+    public Player getPlayer() {
+        return player;
+    }
+
+    public void payLoanBack(int money) {
+        player.payLoanBack(money);
+        if(player.getDebt() == 0){
+            loanDate = null;
+            loanSharkModifier = 1;
+        }
+        advance();
+    }
+
+    public boolean checkWin() {
+        return player.getBank() > WINNING_VALUE;
+    }
+
+    public boolean checkLose() {
+        return player.getHealth() <= 0;
     }
 }

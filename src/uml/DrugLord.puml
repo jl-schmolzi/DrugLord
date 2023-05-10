@@ -52,7 +52,6 @@ class City {
     -final Map<CityName, Integer> flightPrices
     -final CityName name
     +int getDrugPrice(Drug drug)
-    +Map<CityName, Integer> getFlightPrices()
     +public String getFlightPricesString()
 }
 enum CityName {

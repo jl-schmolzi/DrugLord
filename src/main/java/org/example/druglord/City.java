@@ -2,28 +2,10 @@ package org.example.druglord;
 
 import java.util.Map;
 
-public class City {
-    private final Map<Drug, Integer> drugPrices;
-    private final Map<CityName, Integer> flightPrices;
-    private final CityName name;
-
-    public City(Map<Drug, Integer> drugPrices, Map<CityName, Integer> flightPrices, CityName name) {
-        this.drugPrices = drugPrices;
-        this.flightPrices = flightPrices;
-        this.name = name;
-    }
-
+public record City (Map<Drug, Integer> drugPrices, Map<CityName, Integer> flightPrices, CityName name){
     public int getDrugPrice(Drug value) {
         return drugPrices.get(value);
     }
-
-    public Map<CityName, Integer> getFlightPrices() {
-        return flightPrices;
-    }
-    public CityName getName() {
-        return name;
-    }
-
     public String getFlightPricesString() {
         StringBuilder ret = new StringBuilder();
         ret.append("Where do you want to go?\n");
